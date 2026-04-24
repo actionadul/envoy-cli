@@ -1,38 +1,63 @@
 """Root parser and dispatcher for envoy CLI commands."""
 
 import argparse
+import sys
 
-from envoy.commands import compare, export, list as list_cmd, validate, merge, audit, promote
+from envoy.commands import (
+    compare,
+    export,
+    list as list_cmd,
+    validate,
+    merge,
+    audit,
+    promote,
+    snapshot,
+    lint,
+)
+
+_COMMANDS = [
+    compare,
+    export,
+    list_cmd,
+    validate,
+    merge,
+    audit,
+    promote,
+    snapshot,
+    lint,
+]
 
 
-COMMANDS = {
-    "compare": compare,
-    "export": export,
-    "list": list_cmd,
-    "validate": validate,
-    "merge": merge,
-    "audit": audit,
-    "promote": promote,
-}
-
-
-def build_root_parser():
+def build_root_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="envoy",
         description="Manage and diff environment variable sets across deployment targets.",
     )
-    subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
-    subparsers.required = True
-
-    for name, module in COMMANDS.items():
-        module.build_parser(subparsers)
-
+    subparsers = parser.add_subparsers(dest="command", metavar="<command>")
+    for mod in _COMMANDS:
+        mod.build_parser(subparsers)
     return parser
 
 
-def dispatch(args, stdout=None, stderr=None):
-    """Dispatch parsed args to the appropriate command's run function."""
-    module = COMMANDS.get(args.command)
-    if module is None:
-        raise ValueError(f"Unknown command: {args.command}")
-    return module.run(args, stdout=stdout, stderr=stderr)
+def dispatch(argv=None) -> int:
+    parser = build_root_parser()
+    args = parser.parse_args(argv)
+
+    if args.command is None:
+        parser.print_help()
+        return 0
+
+    for mod in _COMMANDS:
+        if args.command == mod.build_parser.__module__.split(".")[-1].replace("list", "list"):
+            return mod.run(args)
+
+    # Fallback: use subparser default func if set
+    if hasattr(args, "func"):
+        return args.func(args)
+
+    parser.print_help()
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(dispatch())
