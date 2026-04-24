@@ -71,6 +71,16 @@ def test_run_returns_2_on_missing_target(env_setup, capsys):
     assert "error" in captured.err
 
 
+def test_run_returns_2_on_missing_env_dir(tmp_path, capsys):
+    """run() should return 2 and print an error when env_dir does not exist."""
+    missing_dir = tmp_path / "nonexistent"
+    args = _make_args("staging", "production", str(missing_dir))
+    rc = run(args)
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "error" in captured.err
+
+
 def test_parser_defaults(parser):
     args = parser.parse_args(["compare", "dev", "prod"])
     assert args.env_dir == "envs"
