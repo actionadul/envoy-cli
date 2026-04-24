@@ -1,20 +1,22 @@
-"""Registry of all envoy sub-commands."""
+"""Root parser and dispatcher for envoy CLI commands."""
 
 import argparse
 
-from envoy.commands import audit, compare, export, list as list_cmd, merge, validate
-
-_COMMANDS = [
-    audit,
-    compare,
-    export,
-    list_cmd,
-    merge,
-    validate,
-]
+from envoy.commands import compare, export, list as list_cmd, validate, merge, audit, promote
 
 
-def build_root_parser() -> argparse.ArgumentParser:
+COMMANDS = {
+    "compare": compare,
+    "export": export,
+    "list": list_cmd,
+    "validate": validate,
+    "merge": merge,
+    "audit": audit,
+    "promote": promote,
+}
+
+
+def build_root_parser():
     parser = argparse.ArgumentParser(
         prog="envoy",
         description="Manage and diff environment variable sets across deployment targets.",
@@ -22,16 +24,15 @@ def build_root_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
     subparsers.required = True
 
-    for cmd in _COMMANDS:
-        cmd.build_parser(subparsers)
+    for name, module in COMMANDS.items():
+        module.build_parser(subparsers)
 
     return parser
 
 
-def dispatch(args: argparse.Namespace) -> int:
-    """Dispatch to the appropriate command's run() function."""
-    for cmd in _COMMANDS:
-        cmd_name = cmd.__name__.split(".")[-1].replace("_cmd", "")
-        if args.command == cmd_name or args.command == cmd.__name__.split(".")[-1]:
-            return cmd.run(args)
-    raise ValueError(f"Unknown command: {args.command}")
+def dispatch(args, stdout=None, stderr=None):
+    """Dispatch parsed args to the appropriate command's run function."""
+    module = COMMANDS.get(args.command)
+    if module is None:
+        raise ValueError(f"Unknown command: {args.command}")
+    return module.run(args, stdout=stdout, stderr=stderr)
