@@ -42,6 +42,13 @@ def build_parser(subparsers=None):
     return parser
 
 
+def _format_line(key, value, fmt):
+    """Format a single key/value pair according to the requested output format."""
+    if fmt == "export":
+        return f'export {key}="{value}"'
+    return f'{key}="{value}"'
+
+
 def run(args, stdout=None, stderr=None):
     """Execute the export command.
 
@@ -65,9 +72,6 @@ def run(args, stdout=None, stderr=None):
         stdout.write(f"Exported {len(resolved)} variable(s) to {out_path}\n")
     else:
         for key, value in sorted(resolved.items()):
-            if args.fmt == "export":
-                stdout.write(f'export {key}="{value}"\n')
-            else:
-                stdout.write(f'{key}="{value}"\n')
+            stdout.write(_format_line(key, value, args.fmt) + "\n")
 
     return 0
