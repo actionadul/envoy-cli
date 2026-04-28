@@ -41,6 +41,10 @@ def run(args: argparse.Namespace) -> int:
         print(f"Error: file not found: {path}", file=sys.stderr)
         return 1
 
+    if not path.is_file():
+        print(f"Error: path is not a file: {path}", file=sys.stderr)
+        return 1
+
     env = parse_env_file(path)
     result = sort(env, reverse=getattr(args, "reverse", False))
 
