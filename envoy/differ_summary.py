@@ -39,6 +39,16 @@ class MultiDiffReport:
     def has_any_differences(self) -> bool:
         return bool(self.targets_with_differences)
 
+    def get_diff_for_target(self, target: str) -> TargetDiff:
+        """Return the TargetDiff for the given target name.
+
+        Raises KeyError if the target is not found in the report.
+        """
+        for td in self.diffs:
+            if td.target == target:
+                return td
+        raise KeyError(f"Target {target!r} not found in report")
+
 
 def build_report(base: Dict[str, str], targets: Dict[str, Dict[str, str]]) -> MultiDiffReport:
     """Build a MultiDiffReport comparing base env against each named target env."""
